@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Files</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .header {
+      max-width: 1200px;
+      margin: 0 auto 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 {
+      color: #333;
+      font-size: 2em;
+    }
+    .upload-btn {
+      background: #4CAF50;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    .upload-btn:hover {
+      background: #45a049;
+    }
+    .gallery {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .file-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .file-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .file-image {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      cursor: pointer;
+    }
+    .file-icon {
+      width: 100%;
+      height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+      font-size: 4em;
+      cursor: pointer;
+    }
+    .file-info {
+      padding: 15px;
+    }
+    .file-name {
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-size {
+      font-size: 0.9em;
+      color: #888;
+    }
+    .loading {
+      text-align: center;
+      color: #666;
+      font-size: 1.2em;
+      margin-top: 50px;
+    }
+    .no-files {
+      text-align: center;
+      color: #666;
+      font-size: 1.1em;
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📸 My Files</h1>
+    <a href="/" class="upload-btn">+ Upload New</a>
+  </div>
+
+  <div id="loading" class="loading">Loading...</div>
+  <div id="gallery" class="gallery" style="display: none;"></div>
+  <div id="no-files" class="no-files" style="display: none;">
+    No files yet. <a href="/">Upload your first file!</a>
+  </div>
+
+  <script>
+    async function loadFiles() {
+      try {
+        const response = await fetch('/files');
+        const files = await response.json();
+        console.log(files);
+        
+        const loading = document.getElementById('loading');
+        const gallery = document.getElementById('gallery');
+        const noFiles = document.getElementById('no-files');
+        
+        loading.style.display = 'none';
+        
+        if (files.length === 0) {
+          noFiles.style.display = 'block';
+          return;
+        }
+        
+        gallery.style.display = 'grid';
+        
+        files.forEach(file => {
+          const card = document.createElement('div');
+          card.className = 'file-card';
+          
+          const isImage = file.type && file.type.startsWith('image/');
+          
+          card.innerHTML = `
+            ${isImage 
+              ? `<img src="${file.url}" alt="${file.name}" class="file-image" onclick="window.open('/file/${file.id}', '_blank')">` 
+             : `<div class="file-icon" onclick="window.open('/file/${file.id}', '_blank')">📄</div>`
+             //onclick="window.open('${file.url}', '_blank')"
+            }
+            
+            <div class="file-info">
+              <div class="file-name" title="${file.name}">${file.name}</div>
+              <div class="file-size">${formatFileSize(file.size)}</div>
+              <a href="/download/${file.id}" class="download-btn">⬇️ Download</a>
+            </div>
+          `;
+          
+          gallery.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loading').textContent = 'Error loading files';
+      }
+    }
+    
+    function formatFileSize(bytes) {
+      if (!bytes) return '';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+    
+    loadFiles();
+  </script>
+</body>
+</html>
